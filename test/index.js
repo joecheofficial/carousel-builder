@@ -16,3 +16,4 @@ require("./api.test.js");
 require("./ui-server.test.js");
 require("./meta-handoff.test.js");
 require("./self-update.test.js");
+require("./render-readiness.test.js");

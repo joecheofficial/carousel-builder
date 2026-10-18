@@ -52,6 +52,14 @@ module.exports.runRecipe = async function runRecipe(input = {}, context = {}) {
   const givenTitle = raw(input, "title");
   const title = String((typeof givenTitle === "string" && givenTitle) || found.manifest.title || "Carousel");
 
+  // Only in installs with the Claims Check module (lib/claims-gate.js): the slide words and the title
+  // with the caption each need a receipt that passes peptide-claims verify
+  // --strict before anything is sent. A dry run still runs and says what is
+  // missing; nothing else changes when the install does not use the gate.
+  const claims = engine.checkExportClaims(found.dir, "publishing", { extra: [{ name: "caption", label: "title and caption", kind: "caption", text: `${title}\n\n${caption}` }] });
+  const claimsNote = claims.applies ? `\n${claims.message}` : "";
+  const claimsMeta = claims.applies ? { claimsCheck: { ok: claims.ok, summary: claims.summary, message: claims.ok ? "" : claims.message } } : {};
+
   const wantsPdf = chosen.some((id) => (available.find((p) => p.id === id) || {}).format === "pdf");
   let pdf = found.pdf;
   if (wantsPdf && !pdf) {
@@ -77,15 +85,17 @@ module.exports.runRecipe = async function runRecipe(input = {}, context = {}) {
   if (dryRun || !confirmed) {
     const plan = await publisher.publish({ ...request, dryRun: true }, options);
     const token = (plan.find((r) => r.confirmToken) || {}).confirmToken || null;
-    const metadata = { published: false, dryRun: true, confirmToken: token, targets: chosen, results: plan };
-    if (dryRun) return { status: "ok", reply: `Dry run, nothing was sent.\n${describe(plan)}${token ? `\n${howTo(token)}` : ""}`, artifacts: [], metadata };
+    const metadata = { published: false, dryRun: true, confirmToken: token, targets: chosen, results: plan, ...claimsMeta };
+    if (dryRun) return { status: "ok", reply: `Dry run, nothing was sent.\n${describe(plan)}${token ? `\n${howTo(token)}` : ""}${claimsNote}`, artifacts: [], metadata };
     return {
       status: "error",
-      reply: `Publishing is irreversible. Confirm this exact request with confirm: PUBLISH. Nothing was sent.\n${describe(plan)}${token ? `\n${howTo(token)}` : ""}`,
+      reply: `Publishing is irreversible. Confirm this exact request with confirm: PUBLISH. Nothing was sent.\n${describe(plan)}${token ? `\n${howTo(token)}` : ""}${claimsNote}`,
       artifacts: [],
       metadata: { ...metadata, dryRun: false, confirmationRequired: publisher.CONFIRM_WORD },
     };
   }
+
+  if (claims.applies && !claims.ok) return errorReply(claims.message, { published: false, targets: chosen, ...claimsMeta });
 
   const results = await publisher.publish({ ...request, confirm, confirmToken, dryRun: dryRunValue, dry_run: dryRunAlt }, options);
   const token = (results.find((r) => r.confirmToken) || {}).confirmToken || null;
@@ -102,8 +112,8 @@ module.exports.runRecipe = async function runRecipe(input = {}, context = {}) {
   const lines = results.map((r) => `${r.id}: ${r.status}${r.url ? ` ${r.url}` : ""}${r.status === "published" ? "" : `. ${r.detail}`}`);
   return {
     status: done.length === results.length ? "ok" : "error",
-    reply: `${done.length} of ${results.length} published.${unsure.length ? ` ${unsure.length} not confirmed: check ${unsure.map((r) => r.id).join(", ")} before retrying.` : ""}\n${lines.join("\n")}`,
+    reply: `${done.length} of ${results.length} published.${unsure.length ? ` ${unsure.length} not confirmed: check ${unsure.map((r) => r.id).join(", ")} before retrying.` : ""}\n${lines.join("\n")}${claimsNote}`,
     artifacts: [],
-    metadata: { published: done.length > 0, publishedTo: done.map((r) => r.id), unconfirmed: unsure.map((r) => r.id), results },
+    metadata: { published: done.length > 0, publishedTo: done.map((r) => r.id), unconfirmed: unsure.map((r) => r.id), results, ...claimsMeta },
   };
 };

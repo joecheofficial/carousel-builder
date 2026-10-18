@@ -214,7 +214,38 @@ async function renderAndExport(deck, opts, ctx) {
     };
     fs.writeFileSync(path.join(outDir, "export.json"), `${JSON.stringify(manifest, null, 2)}\n`);
   }
-  return { ok: Boolean(result.ok) && qa.ok !== false, stage: "done", id: saved.id, draftPath: saved.path, dir: opts.outDir ? outDir : exported.dir, files: opts.outDir ? files : exported.files, pdf: opts.outDir ? pdf : exported.pdf, pdfError, qa, validation };
+  const finalDir = opts.outDir ? outDir : exported.dir;
+  const finalFiles = opts.outDir ? files : exported.files;
+  // Only in installs with the Claims Check module: the words of exactly this render, bound to its slide images.
+  recordCarouselClaims(finalDir, deckToRender, brand, finalFiles);
+  return { ok: Boolean(result.ok) && qa.ok !== false, stage: "done", id: saved.id, draftPath: saved.path, dir: finalDir, files: finalFiles, pdf: opts.outDir ? pdf : exported.pdf, pdfError, qa, validation };
+}
+
+// ---- Claims Check gate (lib/claims-gate.js) ----
+// Off unless this install uses it; then nothing is published or exported
+// without a receipt that passes peptide-claims verify --strict.
+function claimsGate() {
+  return require("../lib/claims-gate.js");
+}
+
+// At render time, writes the words of the deck that was just rendered (with the
+// brand words the renderer draws, and the SHA-256 of each slide image) to
+// <export>/claims/carousel.txt. A new render rewrites it, so an older receipt
+// no longer matches, and an older ads handoff or JPEG copy is removed.
+function recordCarouselClaims(dir, deck, brand, files) {
+  const gate = claimsGate();
+  if (!gate.enforcement().enforced) return null;
+  for (const stale of ["meta-carousel.json", "jpeg"]) fs.rmSync(path.join(dir, stale), { recursive: true, force: true });
+  return gate.writePiece(path.join(dir, "claims"), "carousel", gate.carouselWords(deck, brand, files));
+}
+
+// Checks the pieces of a rendered export for one action. kind "carousel" for
+// publishing and downloads; "ad" for an ads handoff. A caption, when given, is
+// written as its own piece. Returns { applies, ok, message, summary }.
+function checkExportClaims(exportDir, action, options = {}) {
+  const gate = claimsGate();
+  if (!gate.enforcement().enforced) return { applies: false, ok: true, message: "", summary: "" };
+  return gate.check(action, gate.carouselPieces(exportDir, options));
 }
 
 function imageRows(ctx, seat) {
@@ -373,4 +404,4 @@ function doctorText(report) {
   return lines.join("\n");
 }
 
-module.exports = { ROOT, value, lazy, contextOf, config, errorReply, slideFiles, resolveExport, ensurePdf, insideDataDir, captionText, renderAndExport, doctor, doctorText, store };
+module.exports = { ROOT, value, lazy, contextOf, config, errorReply, slideFiles, resolveExport, ensurePdf, insideDataDir, captionText, renderAndExport, doctor, doctorText, store, claimsGate, recordCarouselClaims, checkExportClaims };

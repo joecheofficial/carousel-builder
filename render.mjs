@@ -219,6 +219,7 @@ async function renderSlide(job, ctx) {
   const id = `${process.pid}-${++seq}`;
   html = html.replace(/<html([^>]*)>/i, (_, attrs) => `<html${attrs} data-size="${size}">`);
   html = html.replace(/<head>/i, () => `<head><meta name="qa-endpoint" content="/__qa/${id}">`);
+  if (process.env.CAROUSEL_UNATTENDED_TEXT_ONLY === "1") html = html.replace(/<head>/i, `<head><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'none'; connect-src 'self'; frame-src 'none'; worker-src 'none'; object-src 'none'">`);
   html = html.replace(/<\/head>/i, () => `<style id="brand">\n${ctx.brandCss}</style>\n</head>`);
 
   // the page lives beside the layouts so their relative links (../tokens.css, ../kit.js) resolve
@@ -275,16 +276,20 @@ async function pool(jobs, limit, fn) {
  * render at once, never how many browsers. If the browser dies mid-batch the slides still open fail with that
  * error, the slides still to come fail the same way at once, and the batch returns; nothing waits on a dead process.
  */
-export async function renderJobs(jobs, { brand, size = DEFAULT_SIZE, chromePath, allowDirs = [], dataDir, concurrency } = {}) {
+async function renderJobsInternal(jobs, { brand, size = DEFAULT_SIZE, chromePath, allowDirs = [], dataDir, concurrency } = {}) {
   if (!Object.prototype.hasOwnProperty.call(SIZES, size)) throw Object.assign(new Error(`unknown size "${size}": use ${Object.keys(SIZES).join(", ")}`), { code: "invalid_size" });
   const chrome = chromePath || findChrome();
   if (!chrome) throw Object.assign(new Error("No Chrome, Chromium or Edge found. Install one, or set CHROME_BIN to its binary."), { code: "chrome_not_found" });
   const b = brand || loadBrand(dataDir);
+  if (process.env.CAROUSEL_UNATTENDED_TEXT_ONLY === "1") {
+    require("./lib/render.js").textOnlyInput(b);
+    if (allowDirs.length) throw new Error("Unattended extra asset roots are not permitted");
+  }
   const dims = SIZES[size];
 
   const allow = makeAllowlist();
   allow.addDir(KIT); allow.addDir(ASSETS);
-  if (dataDir) allow.addDir(path.join(dataDir, "library"));
+  if (dataDir && process.env.CAROUSEL_UNATTENDED_TEXT_ONLY !== "1") allow.addDir(path.join(dataDir, "library"));
   for (const d of allowDirs) allow.addDir(d);
   for (const f of [b.logo, b.portrait, b.fonts && b.fonts.display && b.fonts.display.file, b.fonts && b.fonts.body && b.fonts.body.file]) {
     if (typeof f === "string" && !/^(https?:|data:)/i.test(f)) allow.addFile(f);
@@ -320,6 +325,31 @@ export async function renderJobs(jobs, { brand, size = DEFAULT_SIZE, chromePath,
     if (browser) await browser.close();
     server.close();
   }
+}
+
+
+export async function renderJobs(jobs, options = {}) {
+  if (!(options.signal || options.timeoutMs !== undefined || options.deadlineAt !== undefined || options.unattendedTextOnly)) return renderJobsInternal(jobs, options);
+  const {runBoundedRenderer, textOnlyInput, renderBudget} = require("./lib/render.js");
+  options = {...options,deadlineAt:Date.now()+renderBudget(options)};
+  if (options.unattendedTextOnly && (!Array.isArray(jobs) || jobs.length < 1 || jobs.length > 12 || jobs.some(j => !j || !Object.prototype.hasOwnProperty.call(LAYOUTS,j.layout) || !j.fields || typeof j.fields !== "object"))) throw new Error("Explicit bounded text jobs required");
+  if (options.unattendedTextOnly) { textOnlyInput(jobs); textOnlyInput(options.brand); }
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "carousel-bounded-"));
+  try {
+    const input = path.join(tmp,"jobs.json"), output = path.join(tmp,"result.json");
+    const {signal, ...serialOptions} = options;
+    fs.writeFileSync(input, JSON.stringify({jobs, options:serialOptions}), {mode:0o600});
+    const run = await runBoundedRenderer([fileURLToPath(import.meta.url), "--bounded-jobs", input, "--bounded-result", output], options);
+    if (run.error) return {ok:false,error:run.error,files:[],slides:[],qa:{ok:false,issues:[run.error]},shutdown:run.shutdown};
+    let result;
+    try { result = JSON.parse(fs.readFileSync(output,"utf8")); } catch (_) { result = {ok:false,error:"render_failed",files:[],slides:[],qa:{ok:false,issues:["No completed result"]}}; }
+    return {...result,shutdown:run.shutdown, ...(options.unattendedTextOnly ? {networkPolicy:"renderer-origin-only-text"} : {})};
+  } finally { fs.rmSync(tmp,{recursive:true,force:true}); }
+}
+async function boundedWorker() {
+  const input = JSON.parse(fs.readFileSync(process.argv[process.argv.indexOf("--bounded-jobs")+1],"utf8"));
+  const result = await renderJobsInternal(input.jobs,input.options);
+  fs.writeFileSync(process.argv[process.argv.indexOf("--bounded-result")+1],JSON.stringify(result),{mode:0o600});
 }
 
 function report(s) {
@@ -367,7 +397,7 @@ async function main() {
     deck = upgradeDeck(deck).deck;
     size = size || deck.size || null;
     const baseDir = path.resolve(typeof o["base-dir"] === "string" ? o["base-dir"] : path.dirname(o.deck));
-    allowDirs.push(baseDir);
+    if (process.env.CAROUSEL_UNATTENDED_TEXT_ONLY !== "1") allowDirs.push(baseDir);
     const outDir = path.resolve(typeof o["out-dir"] === "string" ? o["out-dir"] : path.dirname(o.deck));
     deck.slides.forEach((s, i) => {
       const fields = Object.assign({}, deck.defaults || {}, s);
@@ -385,7 +415,7 @@ async function main() {
       try { fields = JSON.parse(fs.readFileSync(o.content, "utf8")); }
       catch (e) { stop(2, empty("invalid_content", [e.message]), `could not read ${o.content}: ${e.message}`); }
       baseDir = path.resolve(typeof o["base-dir"] === "string" ? o["base-dir"] : path.dirname(o.content));
-      allowDirs.push(baseDir);
+      if (process.env.CAROUSEL_UNATTENDED_TEXT_ONLY !== "1") allowDirs.push(baseDir);
     }
     jobs.push({ name: id, layout: id, fields, slide: fields ? fields.slide : undefined, total: fields ? fields.total : undefined, baseDir, out: typeof o.out === "string" ? o.out : "slide.png" });
   } else {
@@ -420,7 +450,7 @@ function isMain() {
   try { return fs.realpathSync(process.argv[1]) === fs.realpathSync(fileURLToPath(import.meta.url)); } catch (e) { return false; }
 }
 if (isMain()) {
-  main().catch((e) => {
+  (process.argv.includes("--bounded-jobs") ? boundedWorker() : main()).catch((e) => {
     console.error(e && e.code ? `${e.code}: ${e.message}` : e);
     process.exit(e && e.code === "chrome_not_found" ? 3 : 1);
   });

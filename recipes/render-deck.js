@@ -53,13 +53,18 @@ module.exports.runRecipe = async function runRecipe(input = {}, context = {}) {
   if (outDir && !context.allowExternalOutDir && !insideDataDir(outDir, ctx)) {
     return errorReply("outDir must be inside the data dir. Leave it out to render into the carousel's own export folder.", { rendered: false });
   }
+  // Only in installs with the Claims Check module: a render to a folder outside the data dir would be an
+  // export nobody checked, so it is refused; render into the data dir instead.
+  if (outDir && !insideDataDir(outDir, ctx) && engine.claimsGate().enforcement().enforced) {
+    return errorReply("This install checks wording before anything leaves the carousel data folder, so rendering to an outside folder is refused. Leave outDir out, render, then check the words in the export's claims folder.", { rendered: false, claimsCheck: { ok: false } });
+  }
   const out = await renderAndExport(deck, { id: draftId || undefined, size, outDir, baseDir }, ctx);
   if (!out.files || out.files.length === 0) return errorReply(out.reason, { rendered: false, stage: out.stage, qa: out.qa || null, validation: out.validation || null });
   const issues = (out.qa && out.qa.issues) || [];
   return {
     status: out.ok ? "ok" : "error",
     reply: out.ok
-      ? `Rendered ${out.files.length} slides to ${out.dir}${out.pdf ? ", with carousel.pdf" : ""}. Layout check passed. Id: ${out.id}.`
+      ? `Rendered ${out.files.length} slides to ${out.dir}${out.pdf ? ", with carousel.pdf" : ""}. Layout check passed. Id: ${out.id}.${engine.claimsGate().enforcement().enforced ? ` The slide words are in ${path.join(out.dir, "claims", "carousel.txt")}: run them through peptide-claims (kind carousel) before publishing or exporting.` : ""}`
       : `Rendered ${out.files.length} slides to ${out.dir}, but the layout check found ${issues.length} issue(s): ${issues.slice(0, 5).map((i) => (typeof i === "string" ? i : JSON.stringify(i))).join("; ")}. Fix the deck before publishing.`,
     artifacts: [...out.files, ...(out.pdf ? [out.pdf] : [])],
     metadata: { rendered: true, id: out.id, exportDir: out.dir, files: out.files, pdf: out.pdf, pdfError: out.pdfError, qa: out.qa, validation: out.validation, published: false },

@@ -37,3 +37,16 @@ Typical flow: `status` once, `create-carousel`, show the slides, apply edits and
 - The keyless copy fallback is a structure to edit, not finished copy. Say so when it was used (`metadata.usedModel` is false).
 - There is a browser UI: `carousel ui` serves it on this machine only (`http://127.0.0.1:4410`), and only to the browser opened with the one-time link it makes. Point the user to it when they want to see and edit slides themselves. Publishing through it still needs the human to press the final button of the review dialog: do not drive that button, and do not call its API to publish on their behalf.
 - Every publish attempt is in `logs/publish.jsonl`. Every doctor run is in `logs/doctor.jsonl` with expected against actual, and repeat failures are counted there.
+
+## Claims gate (installs with the Claims Check module)
+
+In an install that uses the Claims Check module, nothing leaves the carousel data folder until its words have a receipt that passes `peptide-claims verify --strict`:
+
+- Every render writes the words of exactly that render to `<export>/claims/carousel.txt`: the title, every slide's text, the brand words the renderer draws (byline, name), and the name and SHA-256 of each slide image. A new render rewrites it and removes an older ads handoff and JPEG copies, so an older receipt no longer matches. If the slide images change, or an image is added, the receipt no longer stands.
+- Publishing needs receipts for `claims/carousel.txt` (kind `carousel`) and `claims/caption.txt`, the title and caption as they will be posted, hashtags included (kind `caption`). The dry run still runs, writes `caption.txt` and lists what is missing; the confirmed publish refuses until every receipt stands, and the publisher checks again on its own.
+- The PDF download and a slide download need the `carousel` receipt. The Meta ads handoff (`export-meta`) is an ad: it needs `claims/ad-slides.txt` and `claims/meta-ad.txt` gated as kind `ad`, and the handoff file is only written after both stand.
+- A render to a folder outside the data folder is refused. The preview in the browser screen is not an export and is not gated.
+
+Each receipt sits beside its file as `<file>.receipt.json`, made with `peptide-claims rubric` and `peptide-claims gate --state-dir <install root>/.peptide-claims-state`; a refusal lists the exact commands. A REVIEW is accepted only by the owner, in the owner's own words; the engine never answers the rubric and never writes that reason. A pass is shown as "No listed wording found" with a sentence that a person must still read it, never as approved, compliant or safe. Words inside images (a background photo, a logo) cannot be read: a person checks those.
+
+The gate is on when an install root above this tool (a folder with `.allsorted-target.json`) holds the peptide-claims module, or its lock turns it on (`product.contentClaimsGate`), or that lock cannot be read. No environment variable or option turns it off. In an install without peptide-claims nothing here changes.

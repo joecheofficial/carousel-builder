@@ -29,6 +29,7 @@ module.exports.runRecipe = async function runRecipe(input = {}, context = {}) {
     `${body.spec.cards.length} cards, call to action ${body.spec.callToAction}. Nothing was uploaded and Meta was not contacted.`,
     `Fill in before use: ${body.fillIn.join(", ")}.`,
     ...body.warnings.map((warning) => `Note: ${warning}`),
+    ...(body.claims && body.claims.summary ? [body.claims.summary] : []),
   ];
   return { status: "ok", reply: lines.join("\n"), artifacts: [file], metadata: { written: true, id, file, spec: body.spec, warnings: body.warnings, fillIn: body.fillIn, networkCalls: 0 } };
 };

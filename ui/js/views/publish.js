@@ -27,6 +27,18 @@ function safeLink(value) {
   return typeof value === "string" && /^https:\/\/[^\s]+$/i.test(value) ? value : null;
 }
 
+/**
+ * Only in installs with the Claims Check module: what the claims check said, as plain text. A pass is
+ * "No listed wording found" and a sentence that a person still reads it: never
+ * a tick, never green, never "approved".
+ */
+function ClaimsBlock(claims) {
+  if (!claims || typeof claims !== "object") return null;
+  const text = claims.ok === false ? String(claims.message || "") : String(claims.summary || "");
+  if (!text) return null;
+  return h("div", { class: "subcard" }, h("p", { class: "field-label strong" }, "Claims check"), h("pre", { class: "muted caption-preview" }, text));
+}
+
 const STATUS_VIEW = {
   published: { label: "Published", tone: "good", icon: "check" },
   processing: { label: "Processing", tone: "info", icon: "clock" },
@@ -369,21 +381,22 @@ export function PublishBar() {
         "div",
         { class: "stack" },
         stage.kind === "plan" && stage.note ? Notice({ tone: "warn" }, stage.note) : null,
+        ClaimsBlock(stage.claims),
         h("p", { class: "muted" }, "This is a preview. Nothing has been sent. Publishing is public and cannot be undone from here."),
         h("ul", { class: "stack-sm plain" }, stage.results.map((result) => ResultCard(result, true))),
         h("div", { class: "subcard" }, h("p", { class: "field-label strong" }, "Caption that will be posted"), h("p", { class: "muted caption-preview" }, stage.request.caption || "No caption. The post goes out without text.")),
-        stage.kind === "plan" && blocked ? InlineError({ message: "At least one platform would fail as it stands. Fix the problems above, or switch that platform off, then publish again." }) : null,
+        stage.kind === "plan" && blocked ? InlineError({ message: stage.claims && stage.claims.ok === false ? "The claims check needs a receipt for every piece before this can be published. The steps are above." : "At least one platform would fail as it stands. Fix the problems above, or switch that platform off, then publish again." }) : null,
         stage.kind === "plan" && !stage.token && !blocked ? InlineError({ message: "The engine did not return a confirmation token for this preview, so it cannot be published. Close this and try again." }) : null
       );
     }
     if (stage.kind === "done") {
-      return h("div", { class: "stack" }, stage.message ? InlineError({ message: stage.message }) : null, h("ul", { class: "stack-sm plain" }, stage.results.map((result) => ResultCard(result, false))));
+      return h("div", { class: "stack" }, stage.message ? InlineError({ message: stage.message }) : null, ClaimsBlock(stage.claims), h("ul", { class: "stack-sm plain" }, stage.results.map((result) => ResultCard(result, false))));
     }
     return null;
   }
 
   function planBlocked() {
-    return stage.kind === "plan" && stage.results.some((result) => (result.problems || []).length > 0 || result.wired === false);
+    return stage.kind === "plan" && (stage.results.some((result) => (result.problems || []).length > 0 || result.wired === false) || Boolean(stage.claims && stage.claims.ok === false));
   }
 
   function dialogFooter() {
@@ -418,7 +431,7 @@ export function PublishBar() {
       // No confirm is sent here, so the engine only describes what it would do.
       const plan = await api("publish", postJson(request));
       if (ticket !== mine) return;
-      setStage({ kind: "plan", request, results: plan.results, token: plan.confirmToken || null, note: null });
+      setStage({ kind: "plan", request, results: plan.results, token: plan.confirmToken || null, note: null, claims: plan.claims || null });
     } catch (error) {
       if (ticket === mine) setStage({ kind: "error", message: errorText(error) });
     } finally {
@@ -428,16 +441,18 @@ export function PublishBar() {
 
   async function confirmPublish() {
     if (stage.kind !== "plan") return;
-    const { request, token, results } = stage;
-    setStage({ kind: "sending", request, results });
+    const { request, token, results, claims } = stage;
+    setStage({ kind: "sending", request, results, claims });
     try {
       // The only place the word and the token of the reviewed dry run are sent.
       const sent = await api("publish", postJson({ ...request, confirm: "PUBLISH", confirmToken: token }));
-      setStage({ kind: "done", results: sent.results, message: null });
+      setStage({ kind: "done", results: sent.results, message: null, claims: sent.claims || null });
     } catch (error) {
       const payload = error instanceof ApiError ? error.payload : null;
       const fresh = payload && Array.isArray(payload.results) ? payload.results : null;
-      if (payload && payload.code === "confirm_token_mismatch" && fresh) {
+      if (payload && payload.code === "claims_check") {
+        setStage({ kind: "done", results: [], message: "Nothing was published.", claims: payload.claims || { ok: false, message: payload.error } });
+      } else if (payload && payload.code === "confirm_token_mismatch" && fresh) {
         // The slides, caption or platforms changed after the summary was made. Nothing was sent: show the new summary.
         setStage({ kind: "plan", request, results: fresh, token: typeof payload.confirmToken === "string" ? payload.confirmToken : null, note: "Something changed after this summary was made, so nothing was sent. Here is the up to date summary. Check it and confirm again." });
       } else if (fresh) {
