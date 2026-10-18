@@ -108,11 +108,11 @@ A deck is one JSON file. Each slide picks a layout and fills its fields.
 }
 ```
 
-`*word*` is the accent style and `**word**` is bold. Six templates can take a `background` of `{ "src": "path or URL", "tint": 0.6 }`, where the tint keeps the text readable (see the table below). Image paths are relative to the deck file. `examples/` has complete decks, and `lib/deck-schema.js` lists the fields and word limits of each template.
+`*word*` is the accent style and `**word**` is bold. The six classic background templates and the eight Hook covers templates can take a `background` of `{ "src": "path or URL", "tint": 0.6 }`, where the tint keeps the text readable (see the table below). Image paths are relative to the deck file. `examples/` has complete decks, and `lib/deck-schema.js` lists the fields and word limits of each template.
 
 ## Templates
 
-Each slide picks one template by its `layout` id. There are ten, built as one family: the same margins, one type scale, one spacing scale, and exactly one accent per slide (a word, a number, a lit bar or the keyword). Nothing else decorates a slide: no logo, byline, counter or progress bar unless you switch them on.
+Each slide picks one template by its `layout` id. There are ten classic templates, built as one family, plus the eight Hook covers templates described below. The classic ten share the same margins, one type scale, one spacing scale, and exactly one accent per slide (a word, a number, a lit bar or the keyword). Nothing else decorates a slide: no logo, byline, counter or progress bar unless you switch them on.
 
 | Template | `layout` id | Use it when | Background image |
 |---|---|---|---|
@@ -129,11 +129,34 @@ Each slide picks one template by its `layout` id. There are ten, built as one fa
 
 A carousel usually runs open, point, proof, close: a Statement or Photo cover first, Steps and a contrast in the middle, a number, chart or quote as proof, then the List and the Call to action. Drafting follows that arc: a hook first, the call to action last, and never the same template three times in a row.
 
-`brand.json` restyles all ten at once: every colour and both fonts are variables the templates read, so changing the accent, the background or the headline font changes the whole deck and nothing in a deck file has to be touched.
+`brand.json` restyles all ten classic templates at once: every colour and both fonts are variables the templates read, so changing the accent, the background or the headline font changes the whole deck and nothing in a deck file has to be touched.
 
 Copy that runs long shrinks to fit, down to a floor that keeps it readable; copy that still cannot fit fails the layout check instead of being clipped. A short headline on the Statement or the Photo cover grows to fill the line.
 
 For a picker, `lib/templates.js` exports `listTemplates()` (id, name, purpose, group, supportsBackground and a ready-made `sampleSlide` for each, in display order) and `renderTemplatePreviews({ dataDir, brand, size })`, which renders one preview PNG per template in your brand into `<data dir>/template-previews/` and reuses them until the brand changes.
+
+### Hook covers
+
+Bold, scroll-stopping covers in the style of popular tool-list posts, with an item slide and a close that match. Each one opens in its own look (a colour and type scheme) and on its own bundled background photo, so it looks finished before you change anything. Write your headline, mark the words you want in the accent colour with `*like this*`, and swap the photo for your own when you want.
+
+| Template | `layout` id | Look it opens in | Use it when |
+|---|---|---|---|
+| Scene cover | `13-hook-scene` | `navy-orange`: deep navy, white headline, orange accent, grey subtitle | You open on an illustrated scene with a big left-aligned headline. |
+| Rule cover | `14-hook-rule` | `noir-white`: near-black, white condensed caps, a ruled kicker | You open on a dark photo with a huge condensed headline. |
+| Split-light cover | `15-hook-split` | `red-blue`: red and blue lit photo, white caps, last lines in red | You open on a dramatic photo with a brand line at the top. |
+| Save footer cover | `16-hook-footer` | `noir-green`: black, heavy geometric caps, green key words | You open with your @handle and a save line along the foot. |
+| Teaser cover | `17-hook-teaser` | `noir-mint`: black, heavy italic caps, mint second line | You open with a teaser line in brackets under the headline. |
+| Swipe cover | `18-hook-swipe` | `street-mint`: night photo, condensed caps, mint first phrase | You open with an outlined swipe button. |
+| Hook item | `19-hook-item` | `noir-mint` | One numbered tool per slide: its name, what it does and an optional screenshot (`image`). |
+| Hook close | `20-hook-cta` | `noir-mint` | The last slide: one line to save, follow or comment, and an outlined button. |
+
+Every cover takes `headline` (required), `sub` (the subtitle, or the teaser line), `kicker` (the small brand line or ruled label), `swipe` (the swipe button text), `handle` and `save` (the footer), and `show_counter` (a "2/8" pill in the top right). The item takes `number`, `name`, `what` and `image`; the close takes `headline`, `sub` and `button`. Every hook template also takes:
+
+- `look`: one of `navy-orange`, `noir-white`, `red-blue`, `noir-green`, `noir-mint`, `street-mint`. Set it in the deck's `defaults` so the cover, items and close match.
+- `brand_colors: true` uses your brand background, text and accent instead of the look's colours, and `brand_fonts: true` uses your brand fonts. Both are off by default: the looks keep the reference palettes unless you opt in.
+- `background`: `{ "src": "...", "tint": 0.2 }` replaces the bundled photo (the tint is an even layer of the look's ground colour, on top of the template's own fade), and `"background": ""` turns the photo off.
+
+The six bundled photos live in `assets/backgrounds/` (original images, see `assets/backgrounds/PROVENANCE.md`), and `examples/hook-*-deck.json` has one complete carousel per cover style. Copy drafting writes with the classic ten; pick the hook templates yourself, in the picker or in the deck file. Their fonts (Anton, Montserrat and Inter, all SIL Open Font License) are bundled in `kit/fonts/`.
 
 Two older ids still work. A saved deck that uses `05-notes-app` renders as the List and `12-path-line` renders as the Step, each with a warning in the result and never an error.
 

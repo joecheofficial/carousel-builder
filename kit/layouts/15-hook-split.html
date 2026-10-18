@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<title>Split-light cover</title>
+<!-- Split-light cover: a dramatic photo lit red on one side and blue on the other, a small spaced-out brand line at
+     the top, a huge condensed headline at the bottom: white lines first, then the accent lines in red (*like this*).
+     Optional: kicker (the brand line), sub, swipe, handle and save, show_counter.
+     Opens in the "red-blue" look on assets/backgrounds/hook-split-light.jpg. look, brand_colors and brand_fonts change that;
+     background { src, tint } swaps the photo. Colours and fonts come from kit/hooks.css. -->
+<script type="application/json" id="content">
+{
+  "slide": 1,
+  "total": 8,
+  "kicker": "Your brand",
+  "headline": "7 tools that make you\n*wonder why*\n*they're free.*"
+}
+</script>
+<link rel="stylesheet" href="../fonts.css">
+<link rel="stylesheet" href="../tokens.css">
+<link rel="stylesheet" href="../hooks.css">
+<style>
+  .slide.hook { --h-photo-pos: 50% 30%; }
+  .hook-fade { background: linear-gradient(180deg, rgba(var(--h-bg-rgb), 0) 40%, rgba(var(--h-bg-rgb), .7) 60%, rgba(var(--h-bg-rgb), .95) 78%, var(--h-bg) 100%); }
+  .hook-brand { flex: none; align-self: center; text-align: center; font-family: var(--h-ui), "Plus Jakarta Sans", sans-serif; font-weight: 700;
+    font-size: max(22px, calc(24px * var(--k))); letter-spacing: .48em; margin-right: -.48em; text-transform: uppercase; color: var(--h-text); line-height: 1.2; white-space: nowrap; }
+  .hook-headline { --h-size: 116px; }
+  .hook-copy { gap: calc(20px * var(--k)); }
+</style>
+</head>
+<body>
+<main class="slide hook t-split" data-bg="photo" data-no-chrome data-look="red-blue">
+  <div class="hook-photo" data-src="photo" data-decor role="img" aria-label="Background"></div>
+  <div class="hook-tint" data-decor aria-hidden="true"></div>
+  <div class="hook-fade" data-decor aria-hidden="true"></div>
+  <span class="hook-count"></span>
+  <section class="hook-stage">
+    <p class="hook-brand" data-field="kicker"></p>
+    <div class="hook-copy" data-fit-box id="copy">
+      <h1 class="hook-headline" data-field="headline" data-fit data-fit-grow="1.2"></h1>
+      <p class="hook-sub" data-field="sub" data-fit></p>
+      <span class="hook-button has-chevrons" data-field="swipe"></span>
+    </div>
+  </section>
+  <footer class="hook-foot"><span class="handle" data-field="handle"></span><span class="save" data-field="save"></span></footer>
+</main>
+<script src="../hooks.js"></script>
+<script src="../kit.js"></script>
+</body></html>

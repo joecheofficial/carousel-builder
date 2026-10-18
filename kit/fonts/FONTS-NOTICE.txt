@@ -12,3 +12,22 @@ Both families are licensed under the SIL Open Font License, Version 1.1.
 The full licence text for each family ships beside this file:
 OFL-CormorantGaramond.txt and OFL-PlusJakartaSans.txt (also at https://openfontlicense.org)
 The files here are the latin-subset variable builds, unmodified apart from subsetting.
+
+Anton.woff (used as "Hook Anton")
+  Anton, Copyright 2020 The Anton Project Authors
+  (https://github.com/googlefonts/AntonFont)
+
+Montserrat-Heavy.woff (used as "Hook Montserrat")
+  Montserrat, Copyright 2011 The Montserrat Project Authors
+  (https://github.com/JulietaUla/Montserrat)
+
+Inter-Heavy.woff (used as "Hook Inter")
+  Inter, Copyright 2016 The Inter Project Authors
+  (https://github.com/rsms/inter)
+
+These three are used by the Hook covers templates and are also licensed under the SIL Open Font License,
+Version 1.1, with the full text beside this file: OFL-Anton.txt, OFL-Montserrat.txt and OFL-Inter.txt.
+They are the Google Fonts builds, subset to latin and saved as WOFF; Montserrat is limited to weights 700 to 900
+and Inter to weights 700 to 900 at its display optical size. Anton's line metrics are tightened
+to an ascent of 1900 and a descent of 330 units, so stacked condensed lines measure the way they look.
+Nothing else was changed.

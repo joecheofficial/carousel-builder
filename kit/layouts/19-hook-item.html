@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<title>Hook item</title>
+<!-- Hook item: the inside slide of a hook carousel. A big number in the accent, the tool name, one line on what it does,
+     and an optional screenshot or image box (image). Optional: kicker, number, what, image, handle and save, show_counter.
+     Opens in the "noir-mint" look, on its own ground with a soft glow of the accent. look, brand_colors and brand_fonts change that;
+     background { src, tint } swaps the photo. Colours and fonts come from kit/hooks.css. -->
+<script type="application/json" id="content">
+{
+  "slide": 1,
+  "total": 8,
+  "number": "01",
+  "name": "Tool name",
+  "what": "One line on what it does and the time it saves you."
+}
+</script>
+<link rel="stylesheet" href="../fonts.css">
+<link rel="stylesheet" href="../tokens.css">
+<link rel="stylesheet" href="../hooks.css">
+<style>
+  .slide.hook { --h-photo-pos: 50% 0%; }
+  .hook-fade { background: linear-gradient(180deg, rgba(var(--h-bg-rgb), .2) 0%, rgba(var(--h-bg-rgb), .55) 100%); }
+  .slide.hook { background: var(--h-glow), var(--h-bg); }
+  .hook-copy { justify-content: flex-start; align-items: flex-start; text-align: left; gap: calc(20px * var(--k)); }
+  .hook-copy:has(.hook-shot.is-empty) { justify-content: center; }
+  .hook-num { font-family: var(--h-font), "Plus Jakarta Sans", sans-serif; font-weight: var(--h-weight); font-style: var(--h-style);
+    letter-spacing: var(--h-track); color: var(--h-accent); line-height: 1.02; white-space: nowrap; max-width: 100%;
+    font-size: calc(150px * var(--h-scale) * var(--k)); }
+  .hook-headline { --h-size: 96px; text-wrap: balance; }
+  .hook-sub { text-align: left; }
+  .hook-shot { flex: 1 1 auto; min-height: calc(240px * var(--k)); width: 100%; margin-top: calc(18px * var(--k)); border-radius: calc(28px * var(--k));
+    border: 3px solid var(--h-line); background-color: rgba(var(--h-bg-rgb), .6); background-size: cover; background-position: 50% 0%; }
+</style>
+</head>
+<body>
+<main class="slide hook t-item" data-bg="photo" data-no-chrome data-look="noir-mint">
+  <div class="hook-photo" data-src="photo" data-decor role="img" aria-label="Background"></div>
+  <div class="hook-tint" data-decor aria-hidden="true"></div>
+  <div class="hook-fade" data-decor aria-hidden="true"></div>
+  <span class="hook-count"></span>
+  <section class="hook-stage">
+    <div class="hook-copy" data-fit-box id="copy">
+      <p class="hook-kicker" data-field="kicker"></p>
+      <div class="hook-num" data-field="number" data-fit data-fit-line></div>
+      <h1 class="hook-headline" data-field="name" data-fit></h1>
+      <p class="hook-sub" data-field="what" data-fit></p>
+      <div class="hook-shot" data-src="image" data-decor role="img" aria-label="Screenshot"></div>
+    </div>
+  </section>
+  <footer class="hook-foot"><span class="handle" data-field="handle"></span><span class="save" data-field="save"></span></footer>
+</main>
+<script src="../hooks.js"></script>
+<script src="../kit.js"></script>
+</body></html>

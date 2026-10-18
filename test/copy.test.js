@@ -82,8 +82,11 @@ function assertValidDeck(deck, count) {
 
 test("the layout list is exactly the curated templates in lib/deck-schema.js", () => {
   assert.deepEqual(LAYOUT_IDS, TEN);
-  assert.deepEqual([...LAYOUT_IDS].sort(), Object.keys(optionalSchema().LAYOUTS).sort());
-  assert.deepEqual([...LAYOUT_IDS].sort(), [...optionalSchema().TEMPLATE_ORDER].sort());
+  // drafting writes with the ten classic templates; the Hook covers family is picked by hand
+  const layouts = optionalSchema().LAYOUTS;
+  const classic = Object.keys(layouts).filter((id) => layouts[id].group !== "hook");
+  assert.deepEqual([...LAYOUT_IDS].sort(), classic.sort());
+  assert.deepEqual([...LAYOUT_IDS].sort(), optionalSchema().TEMPLATE_ORDER.filter((id) => layouts[id].group !== "hook").sort());
 });
 
 test("keyless fallback returns a valid deck of the requested length", async () => {

@@ -398,11 +398,11 @@ test("templates: the list falls back to the schema when lib/templates.js is abse
   assert.equal(listed.json.source, "schema");
   assert.deepEqual(listed.json.templates.map((entry) => entry.id).sort(), Object.keys(LAYOUTS).sort());
   assert.deepEqual(listed.json.previews, { available: false, ready: 0, total: Object.keys(LAYOUTS).length });
-  assert.deepEqual(listed.json.groups.map((group) => group.id), ["open", "point", "proof", "close"]);
+  assert.deepEqual(listed.json.groups.map((group) => group.id), ["open", "point", "proof", "close", "hook"]);
   for (const entry of listed.json.templates) {
     assert.equal(entry.preview, null);
     assert.ok(entry.name && typeof entry.purpose === "string");
-    assert.ok(["open", "point", "proof", "close"].includes(entry.group));
+    assert.ok(["open", "point", "proof", "close", "hook"].includes(entry.group));
     assert.equal(typeof entry.supportsBackground, "boolean");
   }
   const build = await api.handle("templates", "POST", { body: {} });
@@ -475,7 +475,7 @@ test("carousel templates lists every template by group, as text and as JSON", as
   const listed = JSON.parse(json);
   assert.equal(listed.size, "square");
   assert.equal(listed.templates.length, Object.keys(LAYOUTS).length);
-  assert.deepEqual(listed.groups.map((group) => group.id), ["open", "point", "proof", "close"]);
+  assert.deepEqual(listed.groups.map((group) => group.id), ["open", "point", "proof", "close", "hook"]);
   let problem = "";
   assert.equal(await main(["templates", "--size", "poster", "--data", dataDir], { stdout: () => {}, stderr: (chunk) => { problem += chunk; } }), 1);
   assert.match(problem, /size must be one of/);

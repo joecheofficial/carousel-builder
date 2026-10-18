@@ -5,16 +5,22 @@ const fs = require("node:fs");
 const path = require("node:path");
 
 const ROOT = path.resolve(__dirname, "..");
-const { LAYOUTS, validateDeck, SIZES, BACKGROUND_LAYOUTS, TEMPLATE_ORDER, TEMPLATE_GROUPS, LAYOUT_ALIASES, resolveLayoutId, upgradeSlide, upgradeDeck } = require("../lib/deck-schema.js");
+const { LAYOUTS, validateDeck, SIZES, BACKGROUND_LAYOUTS, TEMPLATE_ORDER, TEMPLATE_GROUPS, LAYOUT_ALIASES, resolveLayoutId, upgradeSlide, upgradeDeck, HOOK_LAYOUTS } = require("../lib/deck-schema.js");
+// the ten classic templates; the Hook covers family has its own tests in hook-templates.test.js
+const CLASSIC = TEMPLATE_ORDER.filter((id) => LAYOUTS[id].group !== "hook");
+// settings a hook template reads in kit/hooks.js rather than binding into the page
+const HOOK_SETTINGS = ["look", "brand_colors", "brand_fonts"];
 const { listTemplates, previewPath, previewDir, brandHash } = require("../lib/templates.js");
 const { normalizeBrand } = require("../lib/brand.js");
 
 const cover = (extra) => Object.assign({ layout: "01-editorial-statement", headline: "One clear line." }, extra || {});
 const deckOf = (slides, extra) => Object.assign({ title: "Test", slides }, extra || {});
 
-test("LAYOUTS lists the ten kit templates, each with fields, required and wordCaps", () => {
+test("LAYOUTS lists the kit templates (ten classic plus eight hook), each with fields, required and wordCaps", () => {
   const files = fs.readdirSync(path.join(ROOT, "kit", "layouts")).filter((f) => f.endsWith(".html")).map((f) => f.replace(/\.html$/, "")).sort();
-  assert.equal(files.length, 10);
+  assert.equal(files.length, 18);
+  assert.equal(CLASSIC.length, 10);
+  assert.equal(HOOK_LAYOUTS.length, 8);
   assert.deepEqual(Object.keys(LAYOUTS).sort(), files);
   for (const [id, spec] of Object.entries(LAYOUTS)) {
     assert.ok(Object.keys(spec.fields).length > 0, id);
@@ -45,7 +51,7 @@ test("every template carries its picker metadata: id, name, purpose, group, supp
     assert.ok(Object.isFrozen(spec) && Object.isFrozen(spec.sampleSlide), `${id}: frozen`);
     assert.ok(!/\u2014/.test(JSON.stringify(spec)), `${id}: em dash`);
   }
-  assert.deepEqual(Object.keys(TEMPLATE_GROUPS), ["open", "point", "proof", "close"]);
+  assert.deepEqual(Object.keys(TEMPLATE_GROUPS), ["open", "point", "proof", "close", "hook"]);
   for (const group of Object.keys(TEMPLATE_GROUPS)) assert.ok(Object.values(LAYOUTS).some((t) => t.group === group), `no template in group ${group}`);
   assert.deepEqual(BACKGROUND_LAYOUTS, Object.keys(LAYOUTS).filter((id) => LAYOUTS[id].supportsBackground));
 });
@@ -60,9 +66,11 @@ test("every template's sampleSlide is a complete slide that validates clean, wit
     assert.deepEqual(res.errors, [], id);
     assert.deepEqual(res.warnings, [], id);
   }
-  // the ten samples in display order are themselves a valid deck
-  const all = validateDeck(deckOf(TEMPLATE_ORDER.map((id) => LAYOUTS[id].sampleSlide)));
-  assert.deepEqual([all.ok, all.errors, all.warnings], [true, [], []]);
+  // the ten classic samples in display order are themselves a valid deck, and so are the eight hook samples
+  for (const ids of [CLASSIC, HOOK_LAYOUTS]) {
+    const all = validateDeck(deckOf(ids.map((id) => LAYOUTS[id].sampleSlide)));
+    assert.deepEqual([all.ok, all.errors, all.warnings], [true, [], []]);
+  }
 });
 
 test("every template's fields exist in its html, and the html's own sample is the sampleSlide", () => {
@@ -70,6 +78,7 @@ test("every template's fields exist in its html, and the html's own sample is th
     const html = fs.readFileSync(path.join(ROOT, "kit", "layouts", id + ".html"), "utf8");
     const sample = JSON.parse(html.match(/<script type="application\/json" id="content">([\s\S]*?)<\/script>/)[1]);
     for (const field of Object.keys(spec.fields)) {
+      if (spec.group === "hook" && HOOK_SETTINGS.includes(field)) continue;   // read by kit/hooks.js, see hook-templates.test.js
       assert.ok(new RegExp(`data-(field|src|list)="${field}"`).test(html), `${id}: template has no binding for ${field}`);
     }
     assert.equal(/<main class="slide[^"]*" data-bg/.test(html), spec.supportsBackground, `${id}: data-bg and supportsBackground disagree`);
@@ -84,7 +93,7 @@ test("every template's fields exist in its html, and the html's own sample is th
   }
 });
 
-test("listTemplates returns the ten templates in display order with the fields a picker needs", () => {
+test("listTemplates returns the templates in display order with the fields a picker needs", () => {
   const list = listTemplates();
   assert.deepEqual(list.map((t) => t.id), [...TEMPLATE_ORDER]);
   assert.deepEqual(list.map((t) => t.id), [
@@ -92,10 +101,12 @@ test("listTemplates returns the ten templates in display order with the fields a
     "06-numbered-step", "07-contrast-myth-truth", "09-framework-2x2",
     "03-big-number-cover", "08-data-chart", "04-tweet-card",
     "11-recap-list", "10-cta-comment-keyword",
+    "13-hook-scene", "14-hook-rule", "15-hook-split", "16-hook-footer", "17-hook-teaser", "18-hook-swipe",
+    "19-hook-item", "20-hook-cta",
   ]);
   assert.deepEqual([...TEMPLATE_ORDER].sort(), Object.keys(LAYOUTS).sort());
-  // grouped: open, point, proof, close, each group in one run
-  assert.deepEqual(list.map((t) => t.group), ["open", "open", "point", "point", "point", "proof", "proof", "proof", "close", "close"]);
+  // grouped: open, point, proof, close, then the hook family, each group in one run
+  assert.deepEqual(list.map((t) => t.group), ["open", "open", "point", "point", "point", "proof", "proof", "proof", "close", "close"].concat(Array(8).fill("hook")));
   for (const t of list) {
     assert.deepEqual(Object.keys(t), ["id", "name", "purpose", "group", "supportsBackground", "sampleSlide"]);
     assert.equal(t.name, LAYOUTS[t.id].name);
@@ -107,7 +118,8 @@ test("listTemplates returns the ten templates in display order with the fields a
   list[0].sampleSlide.headline = "changed";
   assert.notEqual(listTemplates()[0].sampleSlide.headline, "changed");
   assert.equal(list[0].name, "Statement");
-  assert.equal(list[list.length - 1].name, "Call to action");
+  assert.equal(list[CLASSIC.length - 1].name, "Call to action");
+  assert.equal(list[list.length - 1].name, "Hook close");
 });
 
 test("previewPath is <dataDir>/template-previews/<brand hash>-<size>/<id>.png and follows the brand", () => {
@@ -244,7 +256,10 @@ test("background: shape is checked, light tints and unsupported layouts warn", (
   const unsupported = validateDeck(deckOf([{ layout: "07-contrast-myth-truth", a_text: "Old", b_text: "New", background: { src: "photo.jpg" } }]));
   assert.equal(unsupported.ok, true);
   assert.match(unsupported.warnings.join("\n"), /does not take a background/);
-  assert.deepEqual(BACKGROUND_LAYOUTS.map((id) => id.slice(0, 2)), ["01", "02", "03", "04", "06", "11"]);
+  assert.deepEqual(BACKGROUND_LAYOUTS.map((id) => id.slice(0, 2)), ["01", "02", "03", "04", "06", "11", "13", "14", "15", "16", "17", "18", "19", "20"]);
+  // the hook templates carry their own fade: a light tint is normal there and does not warn
+  const hookTint = validateDeck(deckOf([{ layout: "14-hook-rule", headline: "One clear line.", background: { src: "photo.jpg", tint: 0.1 } }]));
+  assert.deepEqual([hookTint.ok, hookTint.warnings], [true, []]);
 });
 
 test("size and deck-level fields are checked; unknown keys only warn", () => {

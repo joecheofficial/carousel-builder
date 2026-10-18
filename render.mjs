@@ -185,8 +185,19 @@ function buildContent(layoutId, fields, meta, ctx, baseDir) {
     c.avatar = own("avatar") ? resolveImage(fields.avatar, baseDir, ctx, issues, "avatar") : brandImage("portrait");
     if (!own("name") && brand.name) c.name = brand.name;
   }
+  // any other image field a template declares (the hook item's screenshot) resolves the same way
+  const spec = LAYOUTS[layoutId];
+  for (const [name, field] of Object.entries(spec ? spec.fields : {})) {
+    if (field.type === "image" && own(name) && !["photo", "avatar", "logo"].includes(name)) c[name] = resolveImage(fields[name], baseDir, ctx, issues, name);
+  }
+  // a hook template takes its photo only from background: a stray photo field never reaches the page
+  if (spec && spec.group === "hook") delete c.photo;
+  // a hook template opens on its own bundled background unless the slide sets one, or switches it off with ""
+  if (spec && spec.defaultBackground && !own("background") && process.env.CAROUSEL_UNATTENDED_TEXT_ONLY !== "1") {
+    c.background = { src: path.join(ASSETS, "backgrounds", spec.defaultBackground) };
+  }
   if (c.background && typeof c.background === "object") {
-    c.background = Object.assign({}, c.background, { src: resolveImage(c.background.src, baseDir, ctx, issues, "background") });
+    c.background = Object.assign({}, c.background, { src: resolveImage(c.background.src, own("background") ? baseDir : HERE, ctx, issues, "background") });
   }
   return { content: c, issues };
 }

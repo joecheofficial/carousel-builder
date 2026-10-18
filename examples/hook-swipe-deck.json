@@ -1,0 +1,46 @@
+{
+  "title": "Hook covers example: 18-hook-swipe",
+  "size": "portrait",
+  "_note": "A hook carousel: the cover, three numbered items and the close, all in one look (defaults.look). Every cover background is an original image bundled in assets/backgrounds (see assets/backgrounds/PROVENANCE.md). Change the copy, keep the asterisks around the words you want in the accent colour. Set defaults.brand_colors or brand_fonts to true to use your brand kit instead of the look.",
+  "defaults": {
+    "look": "street-mint"
+  },
+  "slides": [
+    {
+      "layout": "18-hook-swipe",
+      "headline": "*9 free tools* that replace apps you are paying for",
+      "swipe": "Swipe",
+      "background": {
+        "src": "../assets/backgrounds/hook-press-night.jpg"
+      }
+    },
+    {
+      "layout": "19-hook-item",
+      "number": "01",
+      "name": "Note taker",
+      "what": "Turns a meeting recording into tidy notes and a task list."
+    },
+    {
+      "layout": "19-hook-item",
+      "number": "02",
+      "name": "Screen recorder",
+      "what": "Records, trims and shares a walkthrough in one click.",
+      "image": "../assets/backgrounds/hook-noir-desk.jpg"
+    },
+    {
+      "layout": "19-hook-item",
+      "number": "03",
+      "name": "Form builder",
+      "what": "Builds a sign-up form and keeps every answer in one place."
+    },
+    {
+      "layout": "20-hook-cta",
+      "kicker": "Your brand",
+      "headline": "Save this for *later*",
+      "sub": "Follow for one new free tool every day.",
+      "button": "Follow @yourhandle",
+      "handle": "@yourhandle",
+      "save": "Save for later"
+    }
+  ]
+}

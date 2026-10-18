@@ -1,0 +1,124 @@
+/*
+ * Hook covers: the six looks and the parts the hook templates share.
+ *
+ * Unlike the classic templates, a hook template opens in its own look: a fixed colour and type scheme sampled
+ * from the cover style it recreates, so it looks right out of the box. A slide picks another look with
+ * `look`, and opts in to the brand kit with `brand_colors: true` (brand background, text and accent) and
+ * `brand_fonts: true` (brand display and body fonts). These palettes are the only colour literals the hook
+ * templates use.
+ *
+ * Every look sets:
+ *   --h-bg       the ground under the photo and the colour the fades melt into
+ *   --h-text     the headline and the small print
+ *   --h-accent   the *word* accent, the big item number, the swipe chevrons
+ *   --h-muted    the subtitle
+ *   --h-line     rules and pill outlines
+ *   --h-pill     the counter pill fill
+ *   --h-font     headline family, with --h-weight, --h-style, --h-case, --h-track, --h-lh, --h-scale
+ *   --h-ui       small print family (kicker, subtitle, footer, buttons)
+ */
+.slide.hook {
+  --h-bg-rgb: 2, 7, 26;
+  --h-bg: rgb(var(--h-bg-rgb));
+  --h-text: #FFFFFF;
+  --h-accent: #E0855F;
+  --h-muted: #9CA0B4;
+  --h-line: rgba(255, 255, 255, .82);
+  --h-pill: rgba(6, 7, 12, .86);
+  --h-font: "Plus Jakarta Sans";
+  --h-ui: "Plus Jakarta Sans";
+  --h-weight: 800;
+  --h-style: normal;
+  --h-case: none;
+  --h-track: -.025em;
+  --h-lh: 1.04;
+  --h-scale: 1;          /* condensed faces set larger than wide ones for the same measure */
+  --h-tint: .12;         /* the even layer of the ground colour over the photo: background.tint overrides it */
+  background: var(--h-bg);
+  color: var(--h-text);
+}
+/* 1. deep navy, white headline, orange number, grey subtitle */
+.slide.hook[data-look="navy-orange"] { --h-bg-rgb: 2, 7, 26; --h-accent: #E0855F; --h-muted: #9CA0B4;
+  --h-font: "Plus Jakarta Sans"; --h-weight: 800; --h-style: normal; --h-case: none; --h-track: -.03em; --h-lh: 1.04; --h-scale: 1; }
+/* 2. near-black, white condensed caps, white rule and kicker */
+.slide.hook[data-look="noir-white"] { --h-bg-rgb: 5, 5, 5; --h-accent: #FFFFFF; --h-muted: #D6D6D6; --h-line: rgba(255, 255, 255, .78);
+  --h-font: "Hook Anton"; --h-weight: 400; --h-style: normal; --h-case: uppercase; --h-track: 0; --h-lh: 1.0; --h-scale: 1.24; }
+/* 3. red and blue split light, white condensed caps with the last lines in red */
+.slide.hook[data-look="red-blue"] { --h-bg-rgb: 5, 3, 3; --h-accent: #E4433A; --h-muted: #D8D8D8; --h-line: rgba(255, 255, 255, .7);
+  --h-font: "Hook Anton"; --h-weight: 400; --h-style: normal; --h-case: uppercase; --h-track: -.01em; --h-lh: .96; --h-scale: 1.3; }
+/* 4. black, heavy geometric caps, green key words, small white footer */
+.slide.hook[data-look="noir-green"] { --h-bg-rgb: 3, 3, 3; --h-accent: #72D58D; --h-muted: #D0D0D0; --h-line: rgba(255, 255, 255, .7);
+  --h-font: "Hook Montserrat"; --h-weight: 800; --h-style: normal; --h-case: uppercase; --h-track: -.02em; --h-lh: 1.06; --h-scale: .86; }
+/* 5. black, heavy italic caps, mint second line, italic teaser */
+.slide.hook[data-look="noir-mint"] { --h-bg-rgb: 2, 2, 2; --h-accent: #8EF5D4; --h-muted: #EDEDED; --h-line: rgba(255, 255, 255, .9);
+  --h-font: "Hook Inter"; --h-weight: 900; --h-style: italic; --h-case: uppercase; --h-track: -.035em; --h-lh: 1.0; --h-scale: .96; }
+/* 6. dark street photo, condensed caps, mint first phrase, outlined swipe pill */
+.slide.hook[data-look="street-mint"] { --h-bg-rgb: 7, 12, 10; --h-accent: #6FE7BB; --h-muted: #DADADA; --h-line: rgba(255, 255, 255, .8);
+  --h-font: "Hook Anton"; --h-weight: 400; --h-style: normal; --h-case: uppercase; --h-track: -.012em; --h-lh: 1.04; --h-scale: 1.1; }
+
+/* opt in to the brand kit */
+.slide.hook.is-brand-colors { --h-bg-rgb: var(--bg-rgb); --h-text: var(--text); --h-accent: var(--accent-soft); --h-muted: var(--text-70);
+  --h-line: var(--text-55); --h-pill: rgba(var(--bg-deep-rgb), .86); }
+.slide.hook.is-brand-fonts { --h-font: var(--font-display); --h-ui: var(--font-body); --h-weight: 700; --h-track: -.01em; --h-scale: 1; }
+
+/* the soft accent glow the item and close slides sit on when they have no photo */
+.slide.hook { --h-glow: radial-gradient(ellipse 80% 55% at 100% 0%, color-mix(in srgb, var(--h-accent) 26%, transparent), transparent 70%);
+  --h-glow-low: radial-gradient(ellipse 90% 55% at 50% 100%, color-mix(in srgb, var(--h-accent) 20%, transparent), transparent 72%); }
+
+/* ---------- the photo, its tint and the fade ---------- */
+.hook-photo { position: absolute; inset: 0; z-index: 0; background-size: cover; background-position: var(--h-photo-pos, 50% 40%); }
+.hook-tint { position: absolute; inset: 0; z-index: 0; background: var(--h-bg); opacity: var(--h-tint); pointer-events: none; }
+.hook-fade { position: absolute; inset: 0; z-index: 0; pointer-events: none;
+  background: linear-gradient(180deg, rgba(var(--h-bg-rgb), 0) 34%, rgba(var(--h-bg-rgb), .72) 58%, rgba(var(--h-bg-rgb), .96) 76%, var(--h-bg) 100%); }
+.hook-photo.is-empty ~ .hook-tint, .hook-photo.is-empty ~ .hook-fade { display: none; }
+
+/* ---------- the stage: copy sits between the safe edges ---------- */
+.hook-stage { position: absolute; z-index: 3; top: var(--safe-y); bottom: var(--safe-y); left: var(--safe-x); right: var(--safe-x);
+  display: flex; flex-direction: column; }
+/* the padding keeps the tall glyph boxes of display type inside the safe area */
+.hook-copy { flex: 1; min-height: 0; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; text-align: center; gap: calc(26px * var(--k));
+  padding: calc(14px * var(--k)) 0; }
+.slide.hook.has-count .hook-stage { top: calc(var(--safe-y) + 92px * var(--k)); }
+.slide.hook.has-foot .hook-stage { bottom: calc(var(--safe-y) + 76px * var(--k)); }
+
+/* ---------- type ---------- */
+.hook-headline { font-family: var(--h-font), "Plus Jakarta Sans", sans-serif; font-weight: var(--h-weight); font-style: var(--h-style);
+  text-transform: var(--h-case); letter-spacing: var(--h-track); line-height: var(--h-lh); color: var(--h-text);
+  font-size: calc(var(--h-size) * var(--h-scale) * var(--k)); text-wrap: balance; width: 100%;
+  text-shadow: 0 2px 24px rgba(var(--h-bg-rgb), .55); }
+.hook-headline em { font-style: inherit; color: var(--h-accent); }
+.hook-headline strong { font-weight: inherit; color: var(--h-accent); }
+.hook-headline em, .hook-headline strong { line-height: 0; }
+.hook-sub { font-family: var(--h-ui), "Plus Jakarta Sans", sans-serif; font-weight: 600; font-size: calc(34px * var(--k)); line-height: 1.32;
+  color: var(--h-muted); text-wrap: balance; max-width: 100%; }
+.hook-sub em, .hook-sub strong { font-style: inherit; color: var(--h-text); font-weight: 800; }
+
+/* the kicker: small spaced caps, alone or between two rules */
+.hook-kicker { font-family: var(--h-ui), "Plus Jakarta Sans", sans-serif; font-weight: 800; font-size: calc(28px * var(--k)); line-height: 1.2;
+  letter-spacing: .14em; text-transform: uppercase; color: var(--h-text); white-space: nowrap; }
+.hook-ruled { display: flex; align-items: center; gap: calc(22px * var(--k)); width: 100%; }
+.hook-ruled::before, .hook-ruled::after { content: ""; flex: 1; height: 3px; background: var(--h-line); }
+.hook-rule { width: 100%; height: 3px; background: var(--h-line); flex: none; }
+
+/* the slide counter pill, top right */
+.hook-count { position: absolute; z-index: 4; top: var(--safe-y); right: var(--safe-x); font-family: "Plus Jakarta Sans", sans-serif;
+  font-weight: 600; font-size: calc(34px * var(--k)); line-height: 1; letter-spacing: .02em; color: var(--h-text);
+  background: var(--h-pill); border-radius: 999px; padding: calc(16px * var(--k)) calc(26px * var(--k)); }
+
+/* the footer: handle on the left, save line on the right */
+.hook-foot { position: absolute; z-index: 4; left: var(--safe-x); right: var(--safe-x); bottom: var(--safe-y);
+  display: flex; align-items: center; justify-content: space-between; gap: 24px;
+  font-family: var(--h-ui), "Plus Jakarta Sans", sans-serif; font-weight: 700; font-size: max(24px, calc(26px * var(--k)));
+  letter-spacing: .16em; text-transform: uppercase; color: var(--h-text); line-height: 1.2; }
+.hook-foot > span { white-space: nowrap; }
+.hook-foot .save { margin-left: auto; }
+
+/* an outlined pill: the swipe button on the cover, the action on the close */
+.hook-button { display: inline-flex; align-items: center; gap: calc(22px * var(--k)); flex: none;
+  border: calc(5px * var(--k)) solid var(--h-pill-line, var(--h-accent)); border-radius: 999px;
+  padding: calc(12px * var(--k)) calc(48px * var(--k)); font-family: var(--h-ui), "Plus Jakarta Sans", sans-serif;
+  font-weight: 800; font-size: calc(42px * var(--k)); letter-spacing: .04em; text-transform: uppercase; color: var(--h-text); line-height: 1.15;
+  background: rgba(var(--h-bg-rgb), .35); white-space: nowrap; }
+.hook-button.has-chevrons::after { content: ""; flex: none; width: calc(56px * var(--k)); height: calc(40px * var(--k)); background: var(--h-accent);
+  -webkit-mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 56 40'><path d='M2 2h12l18 18-18 18H2l18-18z M24 2h12l18 18-18 18H24l18-18z'/></svg>") center / contain no-repeat;
+          mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 56 40'><path d='M2 2h12l18 18-18 18H2l18-18z M24 2h12l18 18-18 18H24l18-18z'/></svg>") center / contain no-repeat; }

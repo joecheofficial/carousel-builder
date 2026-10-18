@@ -13,7 +13,9 @@ const { decodePng } = require("../lib/pdf.js");
 const { makePng } = require("./publish-helpers.js");
 const { splitPanorama } = require("../lib/panorama.js");
 const { normalizeBrand } = require("../lib/brand.js");
-const { SIZES, LAYOUTS, TEMPLATE_ORDER } = require("../lib/deck-schema.js");
+const { SIZES, LAYOUTS, TEMPLATE_ORDER: ALL_TEMPLATES } = require("../lib/deck-schema.js");
+// the ten classic templates; the Hook covers family is rendered in hook-templates.test.js
+const TEMPLATE_ORDER = ALL_TEMPLATES.filter((id) => LAYOUTS[id].group !== "hook");
 const { listTemplates, renderTemplatePreviews, previewPath, previewDir } = require("../lib/templates.js");
 
 const chrome = findChrome();
@@ -96,8 +98,8 @@ test("background deck renders in story size (1080x1920) with the image under a t
     assert.equal(res.ok, true, res.qa.issues.join("; "));
     assertPngs(res.files, deck.slides.length, "story");
 
-    // every template that takes a background is in this deck
-    assert.deepEqual(deck.slides.map((s) => s.layout).sort(), Object.keys(LAYOUTS).filter((id) => LAYOUTS[id].supportsBackground).sort());
+    // every classic template that takes a background is in this deck
+    assert.deepEqual(deck.slides.map((s) => s.layout).sort(), TEMPLATE_ORDER.filter((id) => LAYOUTS[id].supportsBackground).sort());
     assert.ok(deck.slides.every((s) => s.background && s.background.src));
 
     // the same slides without their background must render different pixels: the image is really there,
@@ -160,16 +162,16 @@ test("local images are only served from the allowlist: deck folder and data dir 
   } finally { for (const d of [deckDir, dataDir, outside]) fs.rmSync(d, { recursive: true, force: true }); }
 });
 
-test("render.mjs --all renders all ten templates with their sample content and exits 0", { skip: noChrome }, () => {
+test("render.mjs --all renders every template with its sample content and exits 0", { skip: noChrome }, () => {
   const dir = tmpDir("all");
   try {
     const run = spawnSync(process.execPath, [path.join(ROOT, "render.mjs"), "--all", "--out-dir", path.join(dir, "previews"), "--data-dir", dir, "--result", path.join(dir, "result.json")],
       { cwd: ROOT, encoding: "utf8", env: Object.assign({}, process.env, { CHROME_BIN: chrome }) });
     assert.equal(run.status, 0, run.stderr);
-    assert.match(run.stdout, /10\/10 passed the overflow gate/);
+    assert.match(run.stdout, new RegExp(`${ALL_TEMPLATES.length}/${ALL_TEMPLATES.length} passed the overflow gate`));
     const result = JSON.parse(fs.readFileSync(path.join(dir, "result.json"), "utf8"));
     assert.equal(result.ok, true);
-    assert.equal(result.files.length, 10);
+    assert.equal(result.files.length, ALL_TEMPLATES.length);
     console.log(`# render.mjs --all: ${result.ms} ms`);
   } finally { fs.rmSync(dir, { recursive: true, force: true }); }
 });
@@ -281,7 +283,7 @@ test("renderTemplatePreviews writes one PNG per template, reuses them on a secon
       renderTemplatePreviews({ dataDir: dir, brand, chromePath: chrome }),
     ]);
     assert.deepEqual(first.map((p) => p.id), listTemplates().map((t) => t.id));
-    assert.equal(first.length, 10);
+    assert.equal(first.length, ALL_TEMPLATES.length);
     const folder = previewDir({ dataDir: dir, brand, size: "portrait" });
     assert.equal(path.dirname(folder), path.join(dir, "template-previews"));
     for (const p of first) {

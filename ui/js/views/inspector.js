@@ -5,7 +5,7 @@ import { ApiError, errorText } from "../api.js";
 import { AutoTextArea, Button, Field, IconButton, InlineError, Notice, Segmented, Spinner, StatusDot, Switch, TextInput, cx, h, icon, redraw } from "../dom.js";
 import {
   buildTemplatePreviews, countWords, derivedShades, emit, ensureTemplatePreviews, flushBrand, generateImage, isHex, normalizeHashtag, searchImages, selectedSlide,
-  set, setBackground, setField, setTint, sizeOf, state, switchLayout, updateBrand, uploadImage, watch,
+  restoreBundledBackground, set, setBackground, setField, setTint, sizeOf, state, switchLayout, updateBrand, uploadImage, watch,
 } from "../state.js";
 import { layoutName } from "./strip.js";
 
@@ -168,7 +168,7 @@ export function Inspector() {
         return Field({ label: title, htmlFor: idFor(name) }, ImageField({ id: idFor(name), value: typeof value === "string" ? value : "", hint: HINTS[name], error, onType: (next) => setField(key, name, next, { quiet: true }), onUpload: (src) => setField(key, name, src) }));
       }
       if (fieldSpec.type === "enum") {
-        return Field({ label: labelOf(name), error }, Segmented({ label: labelOf(name), class: "full", idBase: idFor(name), value: typeof value === "string" ? value : (fieldSpec.values || [])[0] || "", onChange: (next) => setField(key, name, next), options: (fieldSpec.values || []).map((option) => ({ id: option, label: ENUM_LABELS[option] || option })) }));
+        return Field({ label: labelOf(name), error }, Segmented({ label: labelOf(name), class: "full", idBase: idFor(name), value: typeof value === "string" ? value : (name === "look" && typeof spec.look === "string" ? spec.look : (fieldSpec.values || [])[0] || ""), onChange: (next) => setField(key, name, next), options: (fieldSpec.values || []).map((option) => ({ id: option, label: ENUM_LABELS[option] || option })) }));
       }
       if (fieldSpec.type === "number") {
         return Field({ label: title, htmlFor: idFor(name), error }, TextInput({ id: idFor(name), type: "number", value: typeof value === "number" ? String(value) : "", oninput: (event) => setField(key, name, event.target.value === "" ? "" : Number(event.target.value), { quiet: true }) }));
@@ -582,6 +582,7 @@ export function Inspector() {
     huggingface: "Hugging Face (FLUX)", whisk: "Whisk module", "open-generative-ai": "Open Generative AI module",
   };
   const DEFAULT_TINT = 0.6;
+  const HOOK_TINT = 0.2;   // the hook covers carry their own fade: a light tint keeps the photo visible
   const providerName = (id) => PROVIDER_NAMES[id] || id;
   const toneOf = (status) => (status === "ok" ? "ok" : status === "error" ? "bad" : "off");
   function triedLine(entry) {
@@ -663,7 +664,9 @@ export function Inspector() {
     const takes = schema.backgroundLayouts.includes(slide.fields.layout);
     const takers = editor.slides.filter((entry) => schema.backgroundLayouts.includes(entry.fields.layout)).length;
     const current = slide.fields.background && typeof slide.fields.background === "object" ? slide.fields.background : null;
-    const tint = current && typeof current.tint === "number" ? current.tint : DEFAULT_TINT;
+    const layoutSpec = schema.layouts ? schema.layouts[slide.fields.layout] : null;
+    const bundled = layoutSpec && layoutSpec.defaultBackground ? layoutSpec.defaultBackground : "";
+    const tint = current && typeof current.tint === "number" ? current.tint : bundled ? HOOK_TINT : DEFAULT_TINT;
     const credit = typeof slide.fields._credit === "string" ? slide.fields._credit : "";
     const rows = (doctor && doctor.images) || [];
     const generators = rows.filter((row) => row.kind === "generate");
@@ -699,6 +702,26 @@ export function Inspector() {
       { class: "stack-lg" },
       !takes
         ? Notice({ tone: "warn" }, `The ${layoutName(slide.fields.layout)} template does not show a background image. These do: ${layoutNames}. Switch the template, or apply an image to all ${takers} slide${takers === 1 ? "" : "s"} that can show one.`)
+        : null,
+
+      takes && bundled && !current
+        ? h(
+            "section",
+            { "aria-label": "Bundled background", class: "subcard stack-sm" },
+            slide.fields.background === ""
+              ? h(
+                  "div",
+                  { class: "row between" },
+                  h("p", { class: "field-label" }, "The bundled background is off"),
+                  Button({ variant: "ghost", onclick: () => restoreBundledBackground({ key: slide.key }) }, "Use the bundled background")
+                )
+              : h(
+                  "div",
+                  { class: "row between" },
+                  h("div", { class: "min-0" }, h("p", { class: "field-label" }, "This template opens on its bundled background"), h("p", { class: "muted-3 truncate" }, bundled)),
+                  Button({ variant: "danger", icon: "trash", onclick: () => setBackground({ key: slide.key }, null) }, "Remove")
+                )
+          )
         : null,
 
       takes && current && current.src

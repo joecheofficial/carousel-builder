@@ -32,7 +32,7 @@ test("brandCss(DEFAULT_BRAND) matches the defaults written in kit/tokens.css", (
 test("layouts and tokens carry no hardcoded brand colours", () => {
   const files = [path.join(ROOT, "kit", "tokens.css")].concat(
     fs.readdirSync(path.join(ROOT, "kit", "layouts")).filter((f) => f.endsWith(".html")).map((f) => path.join(ROOT, "kit", "layouts", f)));
-  assert.equal(files.length, 11);   // tokens.css plus the ten templates
+  assert.equal(files.length, 19);   // tokens.css plus the ten classic and eight hook templates (their palettes live in kit/hooks.css)
   for (const file of files) {
     const css = fs.readFileSync(file, "utf8");
     const literals = (css.match(/rgba?\(\s*\d[^)]*\)/g) || []).filter((m) => !/^rgba?\(\s*0\s*,\s*0\s*,\s*0\s*,/.test(m));

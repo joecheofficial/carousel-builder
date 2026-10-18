@@ -12,6 +12,7 @@ require("./brand.test.js");
 require("./deck-schema.test.js");
 require("./render.test.js");
 require("./render-browser.test.js");
+require("./hook-templates.test.js");
 require("./api.test.js");
 require("./ui-server.test.js");
 require("./meta-handoff.test.js");

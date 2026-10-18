@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<title>Rule cover</title>
+<!-- Rule cover: a dark cinematic photo, a thin rule with a small all-caps kicker in the middle of it, then a huge
+     condensed all-caps headline at the bottom. Optional: kicker, sub, swipe, handle and save, show_counter.
+     Opens in the "noir-white" look on assets/backgrounds/hook-noir-desk.jpg. look, brand_colors and brand_fonts change that;
+     background { src, tint } swaps the photo. Colours and fonts come from kit/hooks.css. -->
+<script type="application/json" id="content">
+{
+  "slide": 1,
+  "total": 8,
+  "kicker": "Your brand",
+  "headline": "10 free tools you will wish you found earlier"
+}
+</script>
+<link rel="stylesheet" href="../fonts.css">
+<link rel="stylesheet" href="../tokens.css">
+<link rel="stylesheet" href="../hooks.css">
+<style>
+  .hook-headline { --h-size: 112px; }
+  .hook-copy { gap: calc(22px * var(--k)); }
+</style>
+</head>
+<body>
+<main class="slide hook t-rule" data-bg="photo" data-no-chrome data-look="noir-white">
+  <div class="hook-photo" data-src="photo" data-decor role="img" aria-label="Background"></div>
+  <div class="hook-tint" data-decor aria-hidden="true"></div>
+  <div class="hook-fade" data-decor aria-hidden="true"></div>
+  <span class="hook-count"></span>
+  <section class="hook-stage">
+    <div class="hook-copy" data-fit-box id="copy">
+      <div class="hook-kicker hook-ruled" data-optional><span data-field="kicker"></span></div>
+      <h1 class="hook-headline" data-field="headline" data-fit data-fit-grow="1.25"></h1>
+      <p class="hook-sub" data-field="sub" data-fit></p>
+      <span class="hook-button has-chevrons" data-field="swipe"></span>
+    </div>
+  </section>
+  <footer class="hook-foot"><span class="handle" data-field="handle"></span><span class="save" data-field="save"></span></footer>
+</main>
+<script src="../hooks.js"></script>
+<script src="../kit.js"></script>
+</body></html>

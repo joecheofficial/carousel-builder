@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<title>Hook close</title>
+<!-- Hook close: the last slide of a hook carousel. A ruled kicker, one big line to save, follow or comment (*accent*),
+     a short line under it and an outlined button. Optional: kicker, sub, button, handle and save, show_counter.
+     Opens in the "noir-mint" look, on its own ground with a soft glow of the accent. look, brand_colors and brand_fonts change that;
+     background { src, tint } swaps the photo. Colours and fonts come from kit/hooks.css. -->
+<script type="application/json" id="content">
+{
+  "slide": 1,
+  "total": 8,
+  "headline": "Save this for *later*",
+  "sub": "Follow for one new free tool every day.",
+  "button": "Follow @yourhandle",
+  "handle": "@yourhandle"
+}
+</script>
+<link rel="stylesheet" href="../fonts.css">
+<link rel="stylesheet" href="../tokens.css">
+<link rel="stylesheet" href="../hooks.css">
+<style>
+  .hook-fade { background: linear-gradient(180deg, rgba(var(--h-bg-rgb), .25) 0%, rgba(var(--h-bg-rgb), .6) 100%); }
+  .slide.hook { background: var(--h-glow-low), var(--h-bg); }
+  .hook-copy { justify-content: center; gap: calc(30px * var(--k)); }
+  .hook-headline { --h-size: 124px; }
+  .hook-button { --h-pill-line: var(--h-accent); margin-top: calc(12px * var(--k)); text-transform: none; letter-spacing: .01em; }
+</style>
+</head>
+<body>
+<main class="slide hook t-cta" data-bg="photo" data-no-chrome data-look="noir-mint">
+  <div class="hook-photo" data-src="photo" data-decor role="img" aria-label="Background"></div>
+  <div class="hook-tint" data-decor aria-hidden="true"></div>
+  <div class="hook-fade" data-decor aria-hidden="true"></div>
+  <span class="hook-count"></span>
+  <section class="hook-stage">
+    <div class="hook-copy" data-fit-box id="copy">
+      <div class="hook-kicker hook-ruled" data-optional><span data-field="kicker"></span></div>
+      <h1 class="hook-headline" data-field="headline" data-fit data-fit-grow="1.2"></h1>
+      <p class="hook-sub" data-field="sub" data-fit></p>
+      <span class="hook-button" data-field="button"></span>
+    </div>
+  </section>
+  <footer class="hook-foot"><span class="handle" data-field="handle"></span><span class="save" data-field="save"></span></footer>
+</main>
+<script src="../hooks.js"></script>
+<script src="../kit.js"></script>
+</body></html>

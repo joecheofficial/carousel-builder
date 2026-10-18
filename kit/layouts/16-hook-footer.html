@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<title>Save footer cover</title>
+<!-- Save footer cover: a dark moody photo, a bold geometric all-caps headline with the key words in green (*like this*),
+     and a footer row: the @handle on the left, a save line on the right. Optional: kicker, sub, swipe, show_counter.
+     Opens in the "noir-green" look on assets/backgrounds/hook-cash-noir.jpg. look, brand_colors and brand_fonts change that;
+     background { src, tint } swaps the photo. Colours and fonts come from kit/hooks.css. -->
+<script type="application/json" id="content">
+{
+  "slide": 1,
+  "total": 8,
+  "headline": "People are *saving hours*\nwith these 6 free tools.",
+  "handle": "@yourhandle",
+  "save": "Save for later"
+}
+</script>
+<link rel="stylesheet" href="../fonts.css">
+<link rel="stylesheet" href="../tokens.css">
+<link rel="stylesheet" href="../hooks.css">
+<style>
+  .hook-headline { --h-size: 100px; }
+  .hook-copy { gap: calc(22px * var(--k)); }
+  .slide.hook.has-foot .hook-stage { bottom: calc(var(--safe-y) + 96px * var(--k)); }
+</style>
+</head>
+<body>
+<main class="slide hook t-footer" data-bg="photo" data-no-chrome data-look="noir-green">
+  <div class="hook-photo" data-src="photo" data-decor role="img" aria-label="Background"></div>
+  <div class="hook-tint" data-decor aria-hidden="true"></div>
+  <div class="hook-fade" data-decor aria-hidden="true"></div>
+  <span class="hook-count"></span>
+  <section class="hook-stage">
+    <div class="hook-copy" data-fit-box id="copy">
+      <p class="hook-kicker" data-field="kicker"></p>
+      <h1 class="hook-headline" data-field="headline" data-fit data-fit-grow="1.2"></h1>
+      <p class="hook-sub" data-field="sub" data-fit></p>
+      <span class="hook-button has-chevrons" data-field="swipe"></span>
+    </div>
+  </section>
+  <footer class="hook-foot"><span class="handle" data-field="handle"></span><span class="save" data-field="save"></span></footer>
+</main>
+<script src="../hooks.js"></script>
+<script src="../kit.js"></script>
+</body></html>

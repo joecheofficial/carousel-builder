@@ -727,6 +727,20 @@ export function moveSelected(delta) {
   if (neighbour) moveSlide(slide.key, neighbour.key);
 }
 
+/** Puts a hook cover back on the background it ships with: the slide stops overriding it. */
+export function restoreBundledBackground(scope) {
+  mutate((current) => ({
+    ...current,
+    slides: current.slides.map((slide) => {
+      if (slide.key !== scope.key) return slide;
+      const fields = { ...slide.fields };
+      delete fields.background;
+      delete fields._credit;
+      return { ...slide, fields };
+    }),
+  }));
+}
+
 /** Applies (or removes) a background on one slide, or on every slide whose layout takes one. */
 export function setBackground(scope, background, credit) {
   const schema = state.schema;
@@ -742,7 +756,10 @@ export function setBackground(scope, background, credit) {
         if (credit) fields._credit = credit;
         else delete fields._credit;
       } else {
-        delete fields.background;
+        // a template that opens on its own bundled background (the hook covers) keeps it off with "", not by deleting
+        const spec = schema.layouts && schema.layouts[slide.fields.layout];
+        if (spec && spec.defaultBackground) fields.background = "";
+        else delete fields.background;
         delete fields._credit;
       }
       return { ...slide, fields };
