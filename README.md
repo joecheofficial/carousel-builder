@@ -37,7 +37,7 @@ It is a local tool and it stays local:
 ## Quick start
 
 ```bash
-git clone https://github.com/josephtandle/carousel-builder.git
+git clone https://github.com/joecheofficial/carousel-builder.git
 cd carousel-builder
 ./install.sh                      # creates the data dir, copies example configs, links the `carousel` command
 carousel doctor                   # what is ready, what is missing
